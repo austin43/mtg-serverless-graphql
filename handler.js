@@ -21,17 +21,3 @@ exports.graphqlHandler = function graphqlHandler(event, context, callback) {
   const handler = graphqlLambda({ schema: myGraphQLSchema });
   return handler(event, context, callbackFilter);
 };
-
-// for local endpointURL is /graphql and for prod it is /stage/graphql
-exports.graphiqlHandler = graphiqlLambda({
-  endpointURL: process.env.REACT_APP_GRAPHQL_ENDPOINT
-    ? process.env.REACT_APP_GRAPHQL_ENDPOINT
-    : '/production/graphql',
-});
-
-// for local endpointURL is /graphql and for prod it is /stage/graphql
-exports.playgroundHandler = lambdaPlayground({
-  endpoint: process.env.REACT_APP_GRAPHQL_ENDPOINT
-    ? process.env.REACT_APP_GRAPHQL_ENDPOINT
-    : '/production/graphql',
-});

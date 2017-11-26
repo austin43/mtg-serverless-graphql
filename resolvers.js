@@ -1,75 +1,79 @@
-import fetch from 'node-fetch';
-import { OAuth2 } from 'oauth';
+import fetch from 'node-fetch'
 
-const twitterEndpoint = {
-  async getRawTweets(args) {
-    const url = `https://api.twitter.com/1.1/statuses/user_timeline.json?screen_name=${
-      args.handle
-    }`;
-    const oauth2 = new OAuth2(
-      args.consumer_key,
-      args.consumer_secret,
-      'https://api.twitter.com/',
-      null,
-      'oauth2/token',
-      null
-    );
+const options = {
+  method: 'GET',
+}
+const baseUrl = `https://api.deckbrew.com/mtg`
 
-    return new Promise(resolve => {
-      oauth2.getOAuthAccessToken(
-        '',
-        {
-          grant_type: 'client_credentials',
-        },
-        (error, accessToken) => {
-          // console.log(access_token);
-          resolve(accessToken);
-        }
-      );
-    })
-      .then(accessToken => {
-        const options = {
-          method: 'GET',
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-        };
-        return fetch(url, options)
-          .then(res => res.json())
-          .then(res => {
-            const tweets = [];
-            let listOfTweets;
+const fetchAndParse = async(url, options) => {
+  const res = await fetch(url, options)
+  return await res.json()
+}
 
-            if (res.length >= 1) {
-              listOfTweets = {
-                name: res[0].user.name,
-                screen_name: res[0].user.screen_name,
-                location: res[0].user.location,
-                description: res[0].user.description,
-                followers_count: res[0].user.followers_count,
-                friends_count: res[0].user.friends_count,
-                favourites_count: res[0].user.favourites_count,
-                posts: [],
-              };
-            }
+const stringifyParams = (args) => {
+  let paramString = ''
+  for(const key in args) {
+    const param = args[key]
+    for(const p of param) {
+      paramString += `${key}=${p}&`
+    }
+  }
+  return paramString
+}
 
-            for (let i = 0; i < res.length; i += 1) {
-              tweets.push({ tweet: res[i].text });
-            }
-
-            listOfTweets.posts = tweets;
-
-            return listOfTweets;
-          })
-          .catch(error => error);
-      })
-      .catch(error => error);
+const methods = {
+  async getCards(args) {
+    let url
+    if(args.typeahead) {
+      url = `${baseUrl}/cards/typeahead?q=${args.typeahead}`
+    } else {
+      const page = args.page || 1
+      delete args.page
+      const params = stringifyParams(args)
+      url = `${baseUrl}/cards?${params}`
+    }
+    return await fetchAndParse(url, options)
   },
-};
+  async showCard(args) {
+    const url = `${baseUrl}/cards/${args.id}`
+    return await fetchAndParse(url, options)
+  },
+  async getSets() {
+    const url = `${baseUrl}/sets`
+    return await fetchAndParse(url, options)
+  },
+  async showSet(args) {
+    const url = `${baseUrl}/sets/${args.id}`
+    return await fetchAndParse(url, options)
+  },
+  async getColors() {
+    const url = `${baseUrl}/colors`
+    return await fetchAndParse(url, options)
+  },
+  async getTypes() {
+    const url = `${baseUrl}/types`
+    return await fetchAndParse(url, options)
+  },
+  async getSubtypes() {
+    const url = `${baseUrl}/subtypes`
+    return await fetchAndParse(url, options)
+  },
+  async getSupertypes() {
+    const url = `${baseUrl}/supertypes`
+    return await fetchAndParse(url, options)
+  },
+}
 
 // eslint-disable-next-line import/prefer-default-export
 export const resolvers = {
   Query: {
-    getTwitterFeed: (root, args) => twitterEndpoint.getRawTweets(args),
+    getCards: (root, args) => methods.getCards(args),
+    showCard: (root, args) => methods.showCard(args),
+    getColors: (root) => methods.getColors(),
+    getTypes: (root) => methods.getTypes(),
+    getSubtypes: (root) => methods.getSubtypes(),
+    getSupertypes: (root) => methods.getSupertypes(),
+    getSets: (root) => methods.getSets(),
+    showSet: (root, args) => methods.showSet(args),
   },
-};
+}
