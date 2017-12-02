@@ -7,7 +7,8 @@ const baseUrl = `https://api.deckbrew.com/mtg`
 
 const fetchAndParse = async(url, options) => {
   const res = await fetch(url, options)
-  return await res.json()
+  const jsonRes = await res.json()
+  return jsonRes.errors ? [] : jsonRes
 }
 
 const stringifyParams = (args) => {
